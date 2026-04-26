@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { BookOpen, UserRound } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -11,20 +12,9 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import type { WizardStoryInput } from '@/domain/story';
 import { useStoryStore } from '@/store/story-store';
 
-const demoInput: WizardStoryInput = {
-  idea: 'A detective hears forbidden voices under the drowned cathedral and must decide who to trust.',
-  genre: 'Mystic Detective',
-  tone: 'Cinematic',
-  visualStyle: 'Dark gothic',
-  difficulty: 'Normal',
-  length: 'Medium story',
-  characterMode: 'generate',
-};
-
-const lengthTargets: Record<WizardStoryInput['length'], number> = {
+const lengthTargets: Record<'Short adventure' | 'Medium story' | 'Long campaign', number> = {
   'Short adventure': 8,
   'Medium story': 14,
   'Long campaign': 22,
@@ -41,25 +31,18 @@ export function AdventureScenePlayer({ storyId }: Props) {
     isLoading,
     error,
     hasStarted,
-    createStoryFromWizardInput,
     startStory,
     chooseAction,
     submitCustomAction,
-    resetStory,
   } = useStoryStore();
 
   const [customAction, setCustomAction] = useState('');
 
   useEffect(() => {
-    if (!currentStory) {
-      createStoryFromWizardInput(demoInput);
-      return;
-    }
-
-    if (currentStory.id === storyId && !hasStarted) {
+    if (currentStory?.id === storyId && !hasStarted) {
       startStory();
     }
-  }, [createStoryFromWizardInput, currentStory, hasStarted, startStory, storyId]);
+  }, [currentStory, hasStarted, startStory, storyId]);
 
   const progressValue = useMemo(() => {
     if (!currentStory) return 0;
@@ -76,13 +59,14 @@ export function AdventureScenePlayer({ storyId }: Props) {
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-4 py-12 sm:px-6">
         <Card className="w-full border-zinc-800 bg-zinc-900/70">
           <CardHeader>
-            <CardTitle className="text-2xl">Preparing your adventure...</CardTitle>
-            <CardDescription>The first scene is being assembled by the mock story engine.</CardDescription>
+            <CardTitle className="text-2xl">No active story loaded</CardTitle>
+            <CardDescription>Create a story first, then start your adventure.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-56 w-full" />
-            <Skeleton className="h-6 w-2/3" />
-            <Skeleton className="h-20 w-full" />
+          <CardContent className="space-y-4 text-sm text-zinc-300">
+            <p>Your story data is currently in-memory only during this MVP phase.</p>
+            <Button asChild>
+              <Link href="/create">Go to story creation</Link>
+            </Button>
           </CardContent>
         </Card>
       </main>
@@ -130,16 +114,9 @@ export function AdventureScenePlayer({ storyId }: Props) {
           {hasMismatchedStory && (
             <Card className="border-amber-700/60 bg-amber-950/40">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <p className="text-sm text-amber-100">This URL story id does not match the current in-memory story.</p>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    resetStory();
-                    createStoryFromWizardInput(demoInput);
-                    startStory();
-                  }}
-                >
-                  Load demo story
+                <p className="text-sm text-amber-100">This URL story id does not match the currently loaded story.</p>
+                <Button variant="secondary" asChild>
+                  <Link href="/create">Create a new story</Link>
                 </Button>
               </CardContent>
             </Card>

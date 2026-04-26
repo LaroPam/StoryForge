@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
@@ -13,7 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import type { WizardStoryInput } from '@/domain/story';
 import { cn } from '@/lib/utils';
+import { useStoryStore } from '@/store/story-store';
 
 const promptChips = [
   'A city where people lose their shadows',
@@ -133,9 +136,15 @@ function makePreview(state: WizardState) {
 }
 
 export function StoryCreationWizard() {
+  const router = useRouter();
+  const createStoryFromWizardInput = useStoryStore((state) => state.createStoryFromWizardInput);
+  const startStory = useStoryStore((state) => state.startStory);
+  const storeError = useStoryStore((state) => state.error);
+
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardState>(initialState);
   const [error, setError] = useState<string | null>(null);
+  const [isStartingStory, setIsStartingStory] = useState(false);
 
   const progress = ((step + 1) / steps.length) * 100;
   const preview = makePreview(data);
@@ -176,6 +185,55 @@ export function StoryCreationWizard() {
   function prevStep() {
     setError(null);
     setStep((prev) => Math.max(prev - 1, 0));
+  }
+
+  function buildWizardInput(state: WizardState): WizardStoryInput {
+    return {
+      idea: state.idea.trim(),
+      genre: state.genre!,
+      tone: state.tone!,
+      visualStyle: state.visualStyle!,
+      difficulty: state.difficulty!,
+      length: state.storyLength!,
+      characterMode: state.characterMode,
+      character:
+        state.characterMode === 'manual'
+          ? {
+              name: state.character.name,
+              role: state.character.role,
+              strength: state.character.strength,
+              weakness: state.character.weakness,
+              secret: state.character.secret,
+              goal: state.character.goal,
+              startingItem: state.character.startingItem,
+            }
+          : undefined,
+    };
+  }
+
+  function handleStartStory() {
+    const stepError = validateCurrentStep();
+    if (stepError) {
+      setError(stepError);
+      return;
+    }
+
+    setError(null);
+    setIsStartingStory(true);
+
+    try {
+      const createdStoryId = createStoryFromWizardInput(buildWizardInput(data));
+
+      if (!createdStoryId) {
+        setError('Unable to create your story. Please try again.');
+        return;
+      }
+
+      startStory();
+      router.push(`/story/${createdStoryId}`);
+    } finally {
+      setIsStartingStory(false);
+    }
   }
 
   return (
@@ -424,7 +482,7 @@ export function StoryCreationWizard() {
                         </p>
                       </CardContent>
                     </Card>
-                    <Button size="lg" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto" onClick={handleStartStory} disabled={isStartingStory}>
                       Start story
                     </Button>
                   </div>
@@ -435,6 +493,7 @@ export function StoryCreationWizard() {
         </Card>
 
         {error && <p className="text-sm text-rose-300">{error}</p>}
+        {storeError && <p className="text-sm text-rose-300">{storeError}</p>}
 
         <div className="flex items-center justify-between gap-3">
           <Button variant="outline" onClick={prevStep} disabled={step === 0}>

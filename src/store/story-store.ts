@@ -18,7 +18,7 @@ type StoryStoreState = {
 };
 
 type StoryStoreActions = {
-  createStoryFromWizardInput: (input: WizardStoryInput) => void;
+  createStoryFromWizardInput: (input: WizardStoryInput) => string | null;
   startStory: () => void;
   chooseAction: (choiceId: string) => void;
   submitCustomAction: (actionText: string) => void;
@@ -65,8 +65,10 @@ export const useStoryStore = create<StoryStore>((set, get) => ({
         isLoading: false,
         error: null,
       });
+      return story.id;
     } catch {
       set({ isLoading: false, error: 'Unable to create story from wizard input.' });
+      return null;
     }
   },
 
