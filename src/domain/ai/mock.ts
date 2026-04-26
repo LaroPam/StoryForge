@@ -260,16 +260,22 @@ export const mockSceneGenerator: SceneGenerator = {
 
     const choices = makeChoices(input.turnNumber);
 
+    const actionDanger = input.actionResult?.dangerDelta ?? 0;
+
     const stateChanges: SceneStateChanges = {
       ...defaultStateChanges(),
-      dangerDelta: input.actionSummary.includes('impossible') ? 7 : input.actionSummary.includes('hesitates') ? 2 : 3,
-      discoveredFactsAdded: [`Turn ${input.turnNumber}: ${input.actionSummary}`],
+      dangerDelta:
+        actionDanger + (input.actionSummary.includes('impossible') ? 4 : input.actionSummary.includes('hesitates') ? 1 : 2),
+      discoveredFactsAdded: [
+        `Turn ${input.turnNumber}: ${input.actionSummary}`,
+        ...(input.actionResult?.fact ? [input.actionResult.fact] : []),
+      ],
       relationshipChanges: [
         {
           npcId: input.story.worldState.relationships[0]?.npcId ?? uid('npc'),
           trustDelta: input.actionSummary.includes('negotiate') ? 4 : 1,
-          tensionDelta: input.actionSummary.includes('risky') ? 4 : 1,
-          note: 'The latest decision changed interpersonal balance.',
+          tensionDelta: input.actionSummary.includes('risky') ? 4 : actionDanger > 4 ? 3 : 1,
+          note: input.actionResult?.relationshipHint ?? 'The latest decision changed interpersonal balance.',
         },
       ],
       questUpdates: [
@@ -296,7 +302,8 @@ export const mockSceneGenerator: SceneGenerator = {
       chapterTitle,
       sceneTitle,
       sceneText:
-        `${input.actionSummary} The atmosphere shifts as the world answers in kind. ` +
+        `${input.actionSummary} ${input.actionResult?.relationshipHint ?? ''}`.trim() +
+        ' The atmosphere shifts as the world answers in kind. ' +
         `Danger hums at the edge of every choice, and unresolved mysteries grow sharper.`,
       choices,
       imagePrompt: mockImagePromptGenerator.generate(input.story, `${sceneTitle} in ${chapterTitle}`),
@@ -398,6 +405,24 @@ function generateNextScene(story: Story, actionSummary: string): { story: Story;
   return { story: nextStory, scene };
 }
 
+function generateNextSceneFromResolution(
+  story: Story,
+  resolution: ActionResolutionResult,
+): { story: Story; scene: Scene } {
+  const turnNumber = story.scenes.length + 1;
+  const generated = mockSceneGenerator.generate({
+    story,
+    turnNumber,
+    actionSummary: resolution.actionSummary,
+    actionResult: resolution,
+  });
+  const chapterNumber = Math.max(1, Math.ceil(turnNumber / 3));
+  const scene = makeSceneFromGeneration(story, generated, chapterNumber);
+  const nextStory = appendScene(story, scene);
+
+  return { story: nextStory, scene };
+}
+
 export const mockStoryEngine: StoryEngine = {
   createStory(input: WizardStoryInput) {
     const seeded = mockStorySeedGenerator.generate(input);
@@ -409,17 +434,34 @@ export const mockStoryEngine: StoryEngine = {
   resolveChoice(story: Story, choiceId: string) {
     const scene = latestScene(story);
     const resolution = mockActionResolver.resolveChoice(scene, choiceId);
-    return generateNextScene(story, resolution.actionSummary);
+    return generateNextSceneFromResolution(story, resolution);
   },
 
   resolveCustomAction(story: Story, actionText: string) {
     const scene = latestScene(story);
     const resolution = mockActionResolver.resolveCustomAction(scene, actionText);
-    return generateNextScene(story, resolution.actionSummary);
+    return generateNextSceneFromResolution(story, resolution);
   },
 };
 
+export function createStoryFromWizardInput(input: WizardStoryInput): { story: Story; firstScene: Scene } {
+  return mockStoryEngine.createStory(input);
+}
+
+export function generateFirstScene(story: Story, openingDirection: string): { story: Story; scene: Scene } {
+  return generateNextScene(story, openingDirection);
+}
+
+export function resolveSelectedChoice(story: Story, choiceId: string): { story: Story; scene: Scene } {
+  return mockStoryEngine.resolveChoice(story, choiceId);
+}
+
+export function resolveCustomActionInput(story: Story, actionText: string): { story: Story; scene: Scene } {
+  return mockStoryEngine.resolveCustomAction(story, actionText);
+}
+
 export {
+  generateNextSceneFromResolution,
   generateNextScene,
   latestScene,
   makeChoices,

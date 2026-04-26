@@ -22,6 +22,7 @@ export interface SceneGenerationInput {
   story: Story;
   turnNumber: number;
   actionSummary: string;
+  actionResult?: ActionResolutionResult;
 }
 
 export interface SceneGenerationResult {
