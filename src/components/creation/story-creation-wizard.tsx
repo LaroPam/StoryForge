@@ -14,6 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  STORY_DIFFICULTIES,
+  STORY_GENRES,
+  STORY_LENGTHS,
+  STORY_TONES,
+  VISUAL_STYLES,
+} from '@/domain/story';
 import type { WizardStoryInput } from '@/domain/story';
 import { cn } from '@/lib/utils';
 import { useStoryStore } from '@/store/story-store';
@@ -25,31 +32,6 @@ const promptChips = [
   'A magic academy where magic is forbidden',
   'A detective who can hear ghosts',
 ] as const;
-
-const genres = [
-  'Dark Fantasy',
-  'Mystic Detective',
-  'Space Odyssey',
-  'Horror',
-  'Romance',
-  'Cyberpunk',
-  'Post-apocalyptic',
-  'Urban Fantasy',
-] as const;
-
-const tones = ['Cinematic', 'Dark', 'Cozy', 'Epic', 'Mysterious', 'Brutal', 'Fairy-tale', 'Anime-inspired'] as const;
-
-const visualStyles = [
-  'Cinematic realism',
-  'Premium fantasy illustration',
-  'Dark gothic',
-  'Anime fantasy',
-  'Watercolor dream',
-  'Retro sci-fi',
-] as const;
-
-const storyLengths = ['Short adventure', 'Medium story', 'Long campaign'] as const;
-const difficulties = ['Easy', 'Normal', 'Dangerous', 'Hardcore'] as const;
 
 const steps = [
   'Story idea',
@@ -65,9 +47,9 @@ type CharacterMode = 'generate' | 'manual';
 
 type WizardState = {
   idea: string;
-  genre: (typeof genres)[number] | null;
-  tone: (typeof tones)[number] | null;
-  visualStyle: (typeof visualStyles)[number] | null;
+  genre: WizardStoryInput['genre'] | null;
+  tone: WizardStoryInput['tone'] | null;
+  visualStyle: WizardStoryInput['visualStyle'] | null;
   characterMode: CharacterMode;
   character: {
     name: string;
@@ -78,8 +60,8 @@ type WizardState = {
     goal: string;
     startingItem: string;
   };
-  storyLength: (typeof storyLengths)[number] | null;
-  difficulty: (typeof difficulties)[number] | null;
+  storyLength: WizardStoryInput['length'] | null;
+  difficulty: WizardStoryInput['difficulty'] | null;
 };
 
 const initialState: WizardState = {
@@ -296,7 +278,7 @@ export function StoryCreationWizard() {
 
                 {step === 1 && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {genres.map((genre) => (
+                    {STORY_GENRES.map((genre) => (
                       <button
                         key={genre}
                         type="button"
@@ -311,7 +293,7 @@ export function StoryCreationWizard() {
 
                 {step === 2 && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {tones.map((tone) => (
+                    {STORY_TONES.map((tone) => (
                       <button
                         key={tone}
                         type="button"
@@ -326,7 +308,7 @@ export function StoryCreationWizard() {
 
                 {step === 3 && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {visualStyles.map((visualStyle) => (
+                    {VISUAL_STYLES.map((visualStyle) => (
                       <button
                         key={visualStyle}
                         type="button"
@@ -427,7 +409,7 @@ export function StoryCreationWizard() {
                     <div>
                       <p className="mb-2 text-sm text-zinc-300">Length</p>
                       <div className="grid gap-3 sm:grid-cols-3">
-                        {storyLengths.map((length) => (
+                        {STORY_LENGTHS.map((length) => (
                           <button
                             key={length}
                             type="button"
@@ -442,7 +424,7 @@ export function StoryCreationWizard() {
                     <div>
                       <p className="mb-2 text-sm text-zinc-300">Difficulty</p>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {difficulties.map((difficulty) => (
+                        {STORY_DIFFICULTIES.map((difficulty) => (
                           <button
                             key={difficulty}
                             type="button"
