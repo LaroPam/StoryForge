@@ -46,6 +46,8 @@ export function StoryLibrary() {
     return stories.filter((story) => getStoryStatus(story) === filter);
   }, [filter, stories]);
 
+  const hasAnyStories = stories.length > 0;
+
   return (
     <main className="min-h-screen bg-zinc-950 px-4 py-10 text-zinc-100 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-7xl space-y-8">
@@ -80,17 +82,25 @@ export function StoryLibrary() {
         {filteredStories.length === 0 ? (
           <Card className="border-zinc-800 bg-zinc-900/60">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">No stories here yet</CardTitle>
+              <CardTitle className="text-2xl">{hasAnyStories ? 'No stories match this filter' : 'No stories here yet'}</CardTitle>
               <CardDescription>
-                Your personal library is waiting for its first adventure. Start with one idea and let the world unfold.
+                {hasAnyStories
+                  ? 'Try a different tab to view your other adventures.'
+                  : 'Your personal library is waiting for its first adventure. Start with one idea and let the world unfold.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <Button asChild size="lg">
-                <Link href="/create">
-                  <Compass className="h-4 w-4" /> Start your first adventure
-                </Link>
-              </Button>
+              {hasAnyStories ? (
+                <Button onClick={() => setFilter('all')} size="lg">
+                  <Compass className="h-4 w-4" /> Show all stories
+                </Button>
+              ) : (
+                <Button asChild size="lg">
+                  <Link href="/create">
+                    <Compass className="h-4 w-4" /> Start your first adventure
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

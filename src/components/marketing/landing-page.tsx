@@ -32,7 +32,7 @@ const howItWorks = [
 const genres = ['Dark Fantasy', 'Mystic Detective', 'Space Odyssey', 'Horror', 'Romance', 'Cyberpunk'];
 
 const features = [
-  'AI-generated scene illustrations',
+  'Atmospheric scene image placeholders (MVP)',
   'Choices and consequences',
   'Persistent world memory',
   'Inventory and quests',

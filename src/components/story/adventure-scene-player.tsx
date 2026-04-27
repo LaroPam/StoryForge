@@ -32,6 +32,7 @@ export function AdventureScenePlayer({ storyId }: Props) {
     isLoading,
     error,
     hasStarted,
+    setActiveStoryById,
     startStory,
     chooseAction,
     submitCustomAction,
@@ -40,10 +41,17 @@ export function AdventureScenePlayer({ storyId }: Props) {
   const [customAction, setCustomAction] = useState('');
 
   useEffect(() => {
-    if (currentStory?.id === storyId && !hasStarted) {
+    if (!hasHydrated) return;
+
+    if (currentStory?.id !== storyId) {
+      setActiveStoryById(storyId);
+      return;
+    }
+
+    if (!hasStarted) {
       startStory();
     }
-  }, [currentStory, hasStarted, startStory, storyId]);
+  }, [currentStory?.id, hasHydrated, hasStarted, setActiveStoryById, startStory, storyId]);
 
   const progressValue = useMemo(() => {
     if (!currentStory) return 0;
@@ -270,39 +278,51 @@ function WorldPanelContent({ health, will }: { health: number; will: number }) {
 
       <section className="space-y-2">
         <h4 className="text-sm font-semibold uppercase tracking-wide text-zinc-300">Relationships</h4>
-        <ul className="space-y-2 text-sm">
-          {worldState.relationships.map((rel) => (
-            <li key={rel.npcId} className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2">
-              <p className="font-medium text-zinc-100">{rel.npcName}</p>
-              <p className="text-xs text-zinc-400">
-                Trust {rel.trust} • Tension {rel.tension}
-              </p>
-              <p className="text-xs text-zinc-300">{rel.note}</p>
-            </li>
-          ))}
-        </ul>
+        {worldState.relationships.length === 0 ? (
+          <p className="text-sm text-zinc-400">No key relationships yet.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {worldState.relationships.map((rel) => (
+              <li key={rel.npcId} className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2">
+                <p className="font-medium text-zinc-100">{rel.npcName}</p>
+                <p className="text-xs text-zinc-400">
+                  Trust {rel.trust} • Tension {rel.tension}
+                </p>
+                <p className="text-xs text-zinc-300">{rel.note}</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-2">
         <h4 className="text-sm font-semibold uppercase tracking-wide text-zinc-300">Active quests</h4>
-        <ul className="space-y-2 text-sm">
-          {worldState.quests.map((quest) => (
-            <li key={quest.id} className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2">
-              <p className="font-medium text-zinc-100">{quest.title}</p>
-              <p className="text-xs text-zinc-400">{quest.summary}</p>
-              <p className="text-xs text-zinc-300">Status: {quest.status} • Progress: {quest.progress}%</p>
-            </li>
-          ))}
-        </ul>
+        {worldState.quests.length === 0 ? (
+          <p className="text-sm text-zinc-400">No active quests right now.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {worldState.quests.map((quest) => (
+              <li key={quest.id} className="rounded-md border border-zinc-700 bg-zinc-900/60 p-2">
+                <p className="font-medium text-zinc-100">{quest.title}</p>
+                <p className="text-xs text-zinc-400">{quest.summary}</p>
+                <p className="text-xs text-zinc-300">Status: {quest.status} • Progress: {quest.progress}%</p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-2">
         <h4 className="text-sm font-semibold uppercase tracking-wide text-zinc-300">Discovered facts</h4>
-        <ul className="list-disc space-y-1 pl-4 text-sm text-zinc-300">
-          {worldState.discoveredFacts.map((fact) => (
-            <li key={fact}>{fact}</li>
-          ))}
-        </ul>
+        {worldState.discoveredFacts.length === 0 ? (
+          <p className="text-sm text-zinc-400">No facts discovered yet.</p>
+        ) : (
+          <ul className="list-disc space-y-1 pl-4 text-sm text-zinc-300">
+            {worldState.discoveredFacts.map((fact) => (
+              <li key={fact}>{fact}</li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

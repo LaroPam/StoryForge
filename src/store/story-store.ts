@@ -20,6 +20,7 @@ type StoryStoreState = {
 type StoryStoreActions = {
   markHydrated: (value: boolean) => void;
   createStoryFromWizardInput: (input: WizardStoryInput) => string | null;
+  setActiveStoryById: (storyId: string) => boolean;
   startStory: () => void;
   chooseAction: (choiceId: string) => void;
   submitCustomAction: (actionText: string) => void;
@@ -95,6 +96,27 @@ export const useStoryStore = create<StoryStore>()(
           set({ isLoading: false, error: 'Unable to create story from wizard input.' });
           return null;
         }
+      },
+
+      setActiveStoryById: (storyId) => {
+        const normalizedId = storyId.trim();
+        if (!normalizedId) {
+          set({ error: 'Invalid story id.' });
+          return false;
+        }
+
+        const story = get().stories.find((item) => item.id === normalizedId);
+        if (!story) {
+          set({ error: 'The requested story was not found in your local library.' });
+          return false;
+        }
+
+        set({
+          ...applyStoryState(story),
+          hasStarted: true,
+          error: null,
+        });
+        return true;
       },
 
       startStory: () => {
