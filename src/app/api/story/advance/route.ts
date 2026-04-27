@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     const engine = getServerStoryEngine();
 
     if (parsed.data.action === 'start') {
-      const result = engine.createStory(parsed.data.input);
+      const result = await engine.createStory(parsed.data.input);
 
       const payload = {
         story: result.story,
@@ -95,8 +95,8 @@ export async function POST(request: Request) {
 
     const result =
       parsed.data.action === 'choice'
-        ? engine.resolveChoice(parsed.data.story, parsed.data.choiceId)
-        : engine.resolveCustomAction(parsed.data.story, parsed.data.actionText.trim());
+        ? await engine.resolveChoice(parsed.data.story, parsed.data.choiceId)
+        : await engine.resolveCustomAction(parsed.data.story, parsed.data.actionText.trim());
 
     const payload = {
       story: result.story,
