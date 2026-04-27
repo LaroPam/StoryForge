@@ -1,11 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import {
-  createStoryFromWizardInput as buildStoryFromWizardInput,
-  resolveCustomActionInput,
-  resolveSelectedChoice,
-} from '@/domain/ai';
+import { getStoryEngine } from '@/domain/ai';
 import type { Scene, Story, WizardStoryInput, WorldState } from '@/domain/story';
 
 type StoryStoreState = {
@@ -70,6 +66,8 @@ function upsertStory(stories: Story[], story: Story): Story[] {
   return [story, ...remaining];
 }
 
+const storyEngine = getStoryEngine();
+
 export const useStoryStore = create<StoryStore>()(
   persist(
     (set, get) => ({
@@ -81,7 +79,7 @@ export const useStoryStore = create<StoryStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { story, firstScene } = buildStoryFromWizardInput(input);
+          const { story, firstScene } = storyEngine.createStory(input);
 
           set({
             stories: upsertStory(get().stories, story),
@@ -121,7 +119,7 @@ export const useStoryStore = create<StoryStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { story, scene } = resolveSelectedChoice(currentStory, choiceId);
+          const { story, scene } = storyEngine.resolveChoice(currentStory, choiceId);
 
           set({
             stories: upsertStory(get().stories, story),
@@ -153,7 +151,7 @@ export const useStoryStore = create<StoryStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { story, scene } = resolveCustomActionInput(currentStory, normalized);
+          const { story, scene } = storyEngine.resolveCustomAction(currentStory, normalized);
 
           set({
             stories: upsertStory(get().stories, story),
