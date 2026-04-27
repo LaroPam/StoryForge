@@ -24,6 +24,7 @@ type Props = { storyId: string };
 
 export function AdventureScenePlayer({ storyId }: Props) {
   const {
+    hasHydrated,
     currentStory,
     currentScene,
     sceneHistory,
@@ -54,19 +55,40 @@ export function AdventureScenePlayer({ storyId }: Props) {
   const health = Math.max(1, 100 - danger);
   const will = Math.max(1, 100 - Math.floor(danger * 0.7));
 
+  if (!hasHydrated) {
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-4 py-12 sm:px-6">
+        <Card className="w-full border-zinc-800 bg-zinc-900/70">
+          <CardHeader>
+            <Skeleton className="h-8 w-52" />
+            <Skeleton className="h-5 w-72" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-10 w-40" />
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   if (!currentStory || !currentScene || !worldState) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-4 py-12 sm:px-6">
         <Card className="w-full border-zinc-800 bg-zinc-900/70">
           <CardHeader>
-            <CardTitle className="text-2xl">No active story loaded</CardTitle>
-            <CardDescription>Create a story first, then start your adventure.</CardDescription>
+            <CardTitle className="text-2xl">No active story found</CardTitle>
+            <CardDescription>Start a new adventure or return to your library.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-zinc-300">
-            <p>Your story data is currently in-memory only during this MVP phase.</p>
-            <Button asChild>
-              <Link href="/create">Go to story creation</Link>
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild>
+                <Link href="/create">Start new adventure</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/library">Go to library</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>

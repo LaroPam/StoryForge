@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ArrowRight, BookOpenText, Compass, Sparkles, Swords, Wand2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -78,16 +79,18 @@ export function LandingPage() {
               uniquely yours.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200">
-                Start adventure <ArrowRight className="h-4 w-4" />
+              <Button asChild size="lg" className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200">
+                <Link href="/create">
+                  Start adventure <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-zinc-700 text-zinc-100 hover:bg-zinc-900">
-                View demo
+              <Button asChild size="lg" variant="outline" className="border-zinc-700 text-zinc-100 hover:bg-zinc-900">
+                <Link href="#story-player-preview">View demo</Link>
               </Button>
             </div>
           </div>
 
-          <Card className="border-zinc-800 bg-zinc-900/70 backdrop-blur">
+          <Card id="story-player-preview" className="border-zinc-800 bg-zinc-900/70 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-xl">Story Player Preview</CardTitle>
               <CardDescription>Atmospheric mockup of the in-adventure reading experience.</CardDescription>
@@ -194,8 +197,8 @@ export function LandingPage() {
           <p className="mx-auto max-w-2xl text-zinc-300">
             Start your first story now and discover how every choice can reshape the world around your protagonist.
           </p>
-          <Button size="lg" className="mt-2 bg-zinc-100 text-zinc-950 hover:bg-zinc-200">
-            Start adventure
+          <Button asChild size="lg" className="mt-2 bg-zinc-100 text-zinc-950 hover:bg-zinc-200">
+            <Link href="/create">Start adventure</Link>
           </Button>
         </div>
       </section>
