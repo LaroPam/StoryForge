@@ -25,6 +25,12 @@ import type {
   StorySeedResult,
   WorldStateUpdater,
 } from './interfaces';
+import {
+  validateActionResolutionResult,
+  validateImagePromptResult,
+  validateSceneGenerationResult,
+  validateSceneStateChanges,
+} from './schemas';
 
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -180,17 +186,17 @@ export const mockActionResolver: ActionResolver = {
     const selected = scene.choices.find((choice) => choice.id === choiceId);
 
     if (!selected) {
-      return {
+      return validateActionResolutionResult({
         actionSummary: 'The protagonist hesitates, uncertain which path to take.',
         dangerDelta: 1,
         relationshipHint: 'Uncertainty frustrates allies.',
         fact: 'Hesitation can be as costly as a wrong decision.',
-      };
+      });
     }
 
     const dangerByRisk = { low: 0, medium: 3, high: 6 } as const;
 
-    return {
+    return validateActionResolutionResult({
       actionSummary: `The protagonist chooses to ${selected.label.toLowerCase()}.`,
       dangerDelta: dangerByRisk[selected.riskLevel],
       relationshipHint:
@@ -200,45 +206,46 @@ export const mockActionResolver: ActionResolver = {
             ? 'Bold action inspires some and alarms others.'
             : 'Companions watch closely, waiting for proof.',
       fact: `Intent recorded: ${selected.intent}. Consequences ripple outward.`,
-    };
+    });
   },
 
   resolveCustomAction(_scene, customAction): ActionResolutionResult {
     const normalized = customAction.trim();
 
     if (normalized.length < 8) {
-      return {
+      return validateActionResolutionResult({
         actionSummary: 'The attempt is too vague to execute cleanly.',
         dangerDelta: 2,
         relationshipHint: 'Your allies ask for a clearer plan.',
         fact: 'Precision matters in volatile situations.',
-      };
+      });
     }
 
     const godMode = /instantly|immortal|destroy all|god/i.test(normalized);
 
     if (godMode) {
-      return {
+      return validateActionResolutionResult({
         actionSummary:
           'The protagonist attempts impossible power. The move partially fails, drawing attention and escalating danger.',
         dangerDelta: 8,
         relationshipHint: 'Companions fear what you almost unleashed.',
         fact: 'Impossible actions are converted into costly attempts.',
-      };
+      });
     }
 
-    return {
+    return validateActionResolutionResult({
       actionSummary: `Custom action attempted: ${normalized}`,
       dangerDelta: 3,
       relationshipHint: 'The group reacts to your initiative with cautious respect.',
       fact: 'Your action altered the momentum of the scene.',
-    };
+    });
   },
 };
 
 export const mockImagePromptGenerator: ImagePromptGenerator = {
   generate(story, sceneSummary): string {
-    return `${story.visualStyle}, ${story.tone.toLowerCase()} mood, ${story.genre.toLowerCase()} setting, protagonist ${story.protagonist.name}, cinematic composition, dramatic lighting, scene: ${sceneSummary}`;
+    const prompt = `${story.visualStyle}, ${story.tone.toLowerCase()} mood, ${story.genre.toLowerCase()} setting, protagonist ${story.protagonist.name}, cinematic composition, dramatic lighting, scene: ${sceneSummary}`;
+    return validateImagePromptResult(prompt);
   },
 };
 
@@ -262,7 +269,7 @@ export const mockSceneGenerator: SceneGenerator = {
 
     const actionDanger = input.actionResult?.dangerDelta ?? 0;
 
-    const stateChanges: SceneStateChanges = {
+    const stateChanges: SceneStateChanges = validateSceneStateChanges({
       ...defaultStateChanges(),
       dangerDelta:
         actionDanger + (input.actionSummary.includes('impossible') ? 4 : input.actionSummary.includes('hesitates') ? 1 : 2),
@@ -296,9 +303,9 @@ export const mockSceneGenerator: SceneGenerator = {
               },
             ]
           : [],
-    };
+    });
 
-    return {
+    return validateSceneGenerationResult({
       chapterTitle,
       sceneTitle,
       sceneText:
@@ -309,15 +316,16 @@ export const mockSceneGenerator: SceneGenerator = {
       imagePrompt: mockImagePromptGenerator.generate(input.story, `${sceneTitle} in ${chapterTitle}`),
       stateChanges,
       hiddenDirectorNotes: 'Keep pressure rising while preserving player agency.',
-    };
+    });
   },
 };
 
 export const mockWorldStateUpdater: WorldStateUpdater = {
   apply(current: WorldState, updates: SceneStateChanges): WorldState {
+    const safeUpdates = validateSceneStateChanges(updates);
     const relationshipById = new Map(current.relationships.map((rel) => [rel.npcId, rel]));
 
-    for (const change of updates.relationshipChanges) {
+    for (const change of safeUpdates.relationshipChanges) {
       const existing = relationshipById.get(change.npcId);
       if (!existing) continue;
 
@@ -331,7 +339,7 @@ export const mockWorldStateUpdater: WorldStateUpdater = {
 
     const questById = new Map(current.quests.map((quest) => [quest.id, quest]));
 
-    for (const change of updates.questUpdates) {
+    for (const change of safeUpdates.questUpdates) {
       const existing = questById.get(change.questId);
       if (!existing) continue;
 
@@ -344,14 +352,14 @@ export const mockWorldStateUpdater: WorldStateUpdater = {
     }
 
     return {
-      dangerLevel: clamp(current.dangerLevel + updates.dangerDelta, 0, 100),
+      dangerLevel: clamp(current.dangerLevel + safeUpdates.dangerDelta, 0, 100),
       inventory: [
-        ...current.inventory.filter((item) => !updates.inventoryRemovedIds.includes(item.id)),
-        ...updates.inventoryAdded,
+        ...current.inventory.filter((item) => !safeUpdates.inventoryRemovedIds.includes(item.id)),
+        ...safeUpdates.inventoryAdded,
       ],
       relationships: Array.from(relationshipById.values()),
       quests: Array.from(questById.values()),
-      discoveredFacts: Array.from(new Set([...current.discoveredFacts, ...updates.discoveredFactsAdded])),
+      discoveredFacts: Array.from(new Set([...current.discoveredFacts, ...safeUpdates.discoveredFactsAdded])),
     };
   },
 };
